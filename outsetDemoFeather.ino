@@ -73,16 +73,11 @@ void setup()
   tft.setRotation(3);
 }
 
-uint8_t data[] = "Hello World!";
-// Dont put this on the stack:
-uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
+// uint8_t data[] = "Hello World!";
+// // Dont put this on the stack:
+// uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
 
-void loop() {
-  // Reset bubble to act on. This is the max amount of bubbles on the screen
-  if (bubbleIndex >= 6) {
-    bubbleIndex = 0;
-    tft.fillScreen(ST7735_BLACK);
-  }
+void drawNextBubble(char* timestamp, bool sleep = false) {
   bubbleIndex ++;
   // Set Y cursor for text print
   if (bubbleIndex > 1) {
@@ -96,6 +91,7 @@ void loop() {
     if (bubbleIndex == 1) {
       leftBubbleY = LEFT_BUBBLE_Y;
     } else if (bubbleIndex == 2) {
+      leftBubbleY = LEFT_BUBBLE_Y;
       leftBubbleY += 21;
     } else {
       leftBubbleY += 42;
@@ -108,19 +104,19 @@ void loop() {
     tft.setTextColor(ST7735_WHITE);
     textX = LEFT_TEXT_X;
     tft.setCursor(textX, textY);
-    tft.println("5:00:02");
+    tft.println(timestamp);
     textY += 8;
     tft.setCursor(textX, textY);
     tft.println("MSG FROM BASE: HELLO!");
     leftBubble = false;
-    delay(500);
+    if (sleep) delay(500);
   }
   else { // Draw right side bubble
     // Set Y cursor for bubbles
     if (bubbleIndex == 1) {
       rightBubbleY = RIGHT_BUBBLE_Y;
     } else if (bubbleIndex == 2) {
-      rightBubbleY = RIGHT_BUBBLE_Y; // TODO: this needs a reset since we never reach index 1
+      rightBubbleY = RIGHT_BUBBLE_Y;
       rightBubbleY += 21;
     } else {
       rightBubbleY += 42;
@@ -133,13 +129,35 @@ void loop() {
     tft.setTextColor(ST7735_BLACK);
     textX = RIGHT_TEXT_X;
     tft.setCursor(textX, textY);
-    tft.println("5:00:00");
+    tft.println(timestamp);
     textY += 8;
     tft.setCursor(textX, textY);
     tft.println("SENT REPLY...OK");
     leftBubble = true;
-    delay(3000);
+    if (sleep) delay(3000);
   }
+}
+
+void loop() {
+  // Reset bubble to act on. This is the max amount of bubbles on the screen
+  if (bubbleIndex >= 6) {
+    // uint8_t history = 5;
+    // leftBubble = !leftBubble;
+    bubbleIndex = 0;
+    tft.fillScreen(ST7735_BLACK);
+    // Draw the last 5 bubbles
+    // while (history != 0) {
+    //   drawNextBubble("5:10:36");
+    //   history--;
+    // }
+  }
+  
+  drawNextBubble("5:10:36", true);
+  drawNextBubble("5:10:37", true);
+  drawNextBubble("5:10:40", true);
+  drawNextBubble("5:10:41", true);
+  drawNextBubble("5:10:44", true);
+  drawNextBubble("5:10:45", true);
   
 //  Serial.println(F("Sending to server"));
 //    
