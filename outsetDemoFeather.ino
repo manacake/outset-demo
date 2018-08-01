@@ -2,8 +2,8 @@
 
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7735.h>
-// #include <RHReliableDatagram.h>
-// #include <RH_RF95.h>
+#include <RHReliableDatagram.h>
+#include <RH_RF95.h>
 #include <SPI.h>
 
 // for feather32u4
@@ -32,8 +32,8 @@
 #define RIGHT_BUBBLE_W 95
 
 // Singleton instance of the radio driver
-//RH_RF95 driver(RFM95_CS, RFM95_INT);
-//RHReliableDatagram manager(driver, CLIENT_ADDRESS);
+RH_RF95 driver(RFM95_CS, RFM95_INT);
+RHReliableDatagram manager(driver, CLIENT_ADDRESS);
 Adafruit_ST7735 tft(TFT_CS, TFT_DC, TFT_RST);
 
 // Default cursor positions
@@ -46,7 +46,7 @@ uint8_t textY = TEXT_Y;
 // The bubble that is being acted on
 uint8_t bubbleIndex = 0;
 // Draw left side bubble ? else draw the right side bubble
-bool leftBubble = true;
+bool leftBubble = false;
 
 uint8_t calendarIconX = 94;
 uint8_t calendarIconY = 2;
@@ -133,41 +133,49 @@ void drawHeader() {
   drawUserIcon();
 }
 
-void setup() 
-{
+void setup() {
   Serial.begin(9600);
 
   pinMode(TFT_LITE, OUTPUT);
   digitalWrite(TFT_LITE, HIGH);
   
-//  if (!manager.init()) {
-//    Serial.println(F("init failed"));
-//    while(1);
-//  }
-//  else if (!driver.setFrequency(915.0)) {
-//    Serial.println(F("set freq failed"));
-//    while(1);
-//  }
-//  else {
-//    driver.setTxPower(20, false);
-//    manager.setTimeout(500);
-//    Serial.println(F("radio init complete"));
-//  }
-
   tft.initR(INITR_BLACKTAB);
   tft.fillScreen(ST7735_BLACK);
   tft.setTextSize(1);
   tft.setRotation(3);
+  tft.setCursor(0,0);
+  
+  if (!manager.init()) {
+    Serial.println(F("init failed"));
+    tft.println("Radio init failed");
+    while(1);
+  }
+  else if (!driver.setFrequency(915.0)) {
+    Serial.println(F("set freq failed"));
+    tft.println("Set frequency failed");
+    while(1);
+  }
+  else {
+    driver.setTxPower(20, false);
+    manager.setTimeout(500);
+    Serial.println(F("radio init complete"));
+    tft.println("Radio init complete");
+  }
 
-  // draw header
+  tft.fillScreen(ST7735_BLACK);
   drawHeader();
 }
 
-// uint8_t data[] = "Hello World!";
-// // Dont put this on the stack:
-// uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
+uint8_t data[] = "Hello World!";
+// Dont put this on the stack:
+uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
 
 void drawNextBubble(char* timestamp, bool sleep = false) {
+  // Reset bubble to act on. This is the max amount of bubbles on the screen
+  if (bubbleIndex >= 5) {
+    bubbleIndex = 0;
+    tft.fillRect(0, 17, 160, 111, ST7735_BLACK);
+  }
   bubbleIndex ++;
   // Set Y cursor for text print
   if (bubbleIndex > 1) {
@@ -197,7 +205,7 @@ void drawNextBubble(char* timestamp, bool sleep = false) {
     tft.println(timestamp);
     textY += 8;
     tft.setCursor(textX, textY);
-    tft.println("MSG FROM BASE: HELLO!");
+    tft.println("RPLY FROM OUT: HELLO!");
     leftBubble = false;
     if (sleep) delay(500);
   }
@@ -222,48 +230,34 @@ void drawNextBubble(char* timestamp, bool sleep = false) {
     tft.println(timestamp);
     textY += 8;
     tft.setCursor(textX, textY);
-    tft.println("SENT REPLY...OK");
+    tft.println("SENT MSG.....OK");
     leftBubble = true;
-    if (sleep) delay(3000);
+    if (sleep) delay(500);
   }
 }
 
 void loop() {
-  // Reset bubble to act on. This is the max amount of bubbles on the screen
-  if (bubbleIndex >= 5) {
-    bubbleIndex = 0;
-    tft.fillScreen(ST7735_BLACK);
-    drawHeader();
+  Serial.println(F("Sending to server"));
+   
+  // Send a message to manager_server
+  if (manager.sendtoWait(data, sizeof(data), SERVER_ADDRESS)) {
+    drawNextBubble("5:10:36", true);
+    drawNextBubble("5:10:37", true);
+    
+    // Now wait for a reply from the server
+    uint8_t len = sizeof(buf);
+    uint8_t from;   
+    if (manager.recvfromAckTimeout(buf, &len, 2000, &from)) {
+      Serial.print(F("got reply from: "));
+      Serial.print(from, DEC);
+      Serial.print(F(": "));
+      Serial.println((char*)buf);
+    } else {
+      Serial.println(F("No reply, is server running?"));
+    }
+  } else {
+    Serial.println(F("sendtoWait failed"));
   }
-  
-  drawNextBubble("5:10:36", true);
-  drawNextBubble("5:10:37", true);
-  drawNextBubble("5:10:40", true);
-  drawNextBubble("5:10:41", true);
-  drawNextBubble("5:10:44", true);
-  
-//  Serial.println(F("Sending to server"));
-//    
-//  // Send a message to manager_server
-//  if (manager.sendtoWait(data, sizeof(data), SERVER_ADDRESS))
-//  {
-//    // Now wait for a reply from the server
-//    uint8_t len = sizeof(buf);
-//    uint8_t from;   
-//    if (manager.recvfromAckTimeout(buf, &len, 2000, &from))
-//    {
-//      Serial.print(F("got reply from: "));
-//      Serial.print(from, DEC);
-//      Serial.print(F(": "));
-//      Serial.println((char*)buf);
-//    }
-//    else
-//    {
-//      Serial.println(F("No reply, is server running?"));
-//    }
-//  }
-//  else
-//    Serial.println(F("sendtoWait failed"));
-//  delay(500);
+  delay(3000);
 }
 
