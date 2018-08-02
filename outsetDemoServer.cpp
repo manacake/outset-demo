@@ -193,7 +193,7 @@ void drawUserIcon() {
   tft.drawPixel(userIconX +8, userIconY +10, ST7735_CYAN);
 
   tft.setCursor(20, 5);
-  tft.print("GREY");
+  tft.print("MATTE");
 }
 
 void drawHeader() {
