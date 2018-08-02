@@ -31,6 +31,10 @@
 #define BUBBLE_H 19
 #define LEFT_BUBBLE_W 130
 #define RIGHT_BUBBLE_W 95
+// on outset the colors are off
+#define	ST7735_BLUE   0xF800 // red
+#define ST7735_CYAN   0xFFE0 // yellow
+#define ST7735_YELLOW 0x07FF // cyan
 
 Adafruit_ST7735 tft(TFT_CS, TFT_DC, TFT_RESET);
 RTC_DS1307 RTC;
@@ -189,7 +193,7 @@ void drawUserIcon() {
   tft.drawPixel(userIconX +8, userIconY +10, ST7735_CYAN);
 
   tft.setCursor(20, 5);
-  tft.print("TINA");
+  tft.print("GREY");
 }
 
 void drawHeader() {
@@ -297,7 +301,7 @@ void drawNextBubble(char* timestamp, bool sleep = false) {
     tft.println(timestamp);
     textY += 8;
     tft.setCursor(textX, textY);
-    tft.println("MSG FROM TINA: HELLO!");
+    tft.println("MSG FROM GREY: HELLO!");
     leftBubble = false;
     if (sleep) delay(500);
   }

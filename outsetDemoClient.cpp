@@ -31,6 +31,10 @@
 #define BUBBLE_H 19
 #define LEFT_BUBBLE_W 130
 #define RIGHT_BUBBLE_W 95
+// on outset the colors are off
+#define	ST7735_BLUE   0xF800 // red
+#define ST7735_CYAN   0xFFE0 // yellow
+#define ST7735_YELLOW 0x07FF // cyan
 
 Adafruit_ST7735 tft(TFT_CS, TFT_DC, TFT_RESET);
 RTC_DS1307 RTC;
@@ -189,7 +193,7 @@ void drawUserIcon() {
   tft.drawPixel(userIconX +8, userIconY +10, ST7735_CYAN);
 
   tft.setCursor(20, 5);
-  tft.print("MITCH");
+  tft.print("MATTE");
 }
 
 void drawHeader() {
@@ -262,7 +266,7 @@ void setup() {
   drawHeader();
 }
 
-void drawNextBubble(char* timestamp, bool reply = false) {
+void drawNextBubble(char* timestamp) {
   // Reset bubble to act on. This is the max amount of bubbles on the screen
   if (bubbleIndex >= 5) {
     bubbleIndex = 0;
@@ -297,11 +301,7 @@ void drawNextBubble(char* timestamp, bool reply = false) {
     tft.println(timestamp);
     textY += 8;
     tft.setCursor(textX, textY);
-    if (reply) {
-      tft.println("REPLY FROM MITCH: HI!");
-    } else {
-      tft.println("NO REPLY FROM MITCH..");
-    }
+    tft.println("REPLY FROM MATTE: HI!");
     leftBubble = false;
   }
   else { // Draw right side bubble
@@ -347,14 +347,14 @@ void loop() {
     if (driver.recv(buf, &len)) {
       Serial.print(F("got reply: "));
       Serial.println((char*)buf);
-      drawNextBubble(timestamp, true);
+      drawNextBubble(timestamp);
     } else {
       Serial.println(F("recv failed"));
-      drawNextBubble(timestamp, false);
+      drawNextBubble(timestamp);
     }
   } else {
     Serial.println(F("No reply, is server running?"));
-    drawNextBubble(timestamp, false);
+    drawNextBubble(timestamp);
   }
   delay(1000);
 }
