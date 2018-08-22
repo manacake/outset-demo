@@ -23,7 +23,7 @@ class Outset {
     // value at index is the handler/render function for that state
     typedef void (Outset::*stateHandlerPtr)(uint8_t);
     struct {
-      const __FlashStringHelper *name;
+      const __FlashStringHelper *name; // The type returned by F()
       stateHandlerPtr handler;
     } stateInfo[NUM_STATES];
 
@@ -39,10 +39,14 @@ class Outset {
 
     // Watch the clock
     unsigned long currentMillis;
-
     // Keep state of blinking cursor on splash state
     unsigned long startCursorLastDrawn; // in ms
     bool cursorVisible;
+
+    uint8_t trackpadState;
+    uint8_t lastTrackpadState;
+    unsigned long lastTrackpadDebounce;
+    unsigned long debounceDelay;
 
     // Sets the new state for the FSM to look at.
     // \param newState: The next state to swtich to. See list in "states.h"

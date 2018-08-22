@@ -17,6 +17,9 @@ stateInfo{
 
   startCursorLastDrawn = 0;
   cursorVisible = false;
+  lastTrackpadState = LOW;
+  lastTrackpadDebounce = 0;
+  debounceDelay = 50;
 }
 
 void Outset::init() {
@@ -91,10 +94,18 @@ void Outset::splashState(uint8_t event) {
 
   while (currentState == SPLASH_STATE) {
     blinkStartCursor((tft.width()-6)/2, 124);
-    if (digitalRead(TP_BUTTON) == HIGH) {
-      Serial.println(F("button pushed!"));
-      Serial.println(deviceID);
+    uint8_t trackpadReading = digitalRead(TP_BUTTON);
+
+    if (trackpadReading != lastTrackpadState) {
+      lastTrackpadDebounce = millis();
     }
+    if (millis() - lastTrackpadDebounce > debounceDelay) {
+      if (trackpadReading != trackpadState) {
+        trackpadState = trackpadReading;
+        if (trackpadState == HIGH) Serial.println("PUSH TRACKPAD");
+      }
+    }
+    lastTrackpadState = trackpadReading;
   }
 }
 
