@@ -1,2 +1,5 @@
 platformio.ini
 .pioenvs
+.piolibdeps
+.travis.yml
+lib/readme.txt

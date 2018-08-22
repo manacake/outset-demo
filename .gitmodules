@@ -1,9 +1,3 @@
 [submodule "lib/RTClib"]
 	path = lib/RTClib
 	url = https://github.com/adafruit/RTClib.git
-[submodule "lib/Adafruit-GFX-Library"]
-	path = lib/Adafruit-GFX-Library
-	url = https://github.com/adafruit/Adafruit-GFX-Library.git
-[submodule "lib/Adafruit-ST7735-Library"]
-	path = lib/Adafruit-ST7735-Library
-	url = https://github.com/adafruit/Adafruit-ST7735-Library.git
