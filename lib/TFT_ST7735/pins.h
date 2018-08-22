@@ -40,5 +40,7 @@
 #define COL_8 44
 #define COL_9 45
 #define COL_10 46
+#define KEYPAD_ROWS 5
+#define KEYPAD_COLS 10
 
 #endif
