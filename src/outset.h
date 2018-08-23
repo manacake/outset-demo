@@ -41,7 +41,8 @@ class Outset {
     unsigned long currentMillis;
     // Keep state of blinking cursor on splash state
     unsigned long startCursorLastDrawn; // in ms
-    bool cursorVisible;
+    bool startCursorVisible;
+    bool startCursorEnabled;
 
     uint8_t trackpadState;
     uint8_t lastTrackpadState;
@@ -52,8 +53,6 @@ class Outset {
     // \param newState: The next state to swtich to. See list in "states.h"
     // \param event: The event that caused the state switch. See list in "states.h"
     void switchToState(uint8_t newState, uint8_t event);
-    // Checks to make sure the state to switch to is valid otherwise panics
-    void switchStateSanityCheck();
 
     // State Handlers
     // Event handlers can take as long as they like, including waiting for
@@ -65,8 +64,10 @@ class Outset {
 
     // Drawing Handlers
     void drawMiniLogo(uint8_t x, uint8_t y);
-    void drawTextContainer(uint8_t x, uint8_t y, uint8_t w, uint8_t h);
+    void drawTextContainer(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t color);
     void blinkStartCursor(uint8_t x, uint8_t y);
+    void drawChatIcon(uint8_t x, uint8_t y);
+    void drawBatteryIcon(uint8_t x, uint8_t y);
 
     // Gets called when state doesn't exist or event is invalid.
     void panic();
