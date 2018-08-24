@@ -21,6 +21,7 @@ stateInfo{
   lastTrackpadState = LOW;
   lastTrackpadDebounce = 0;
   debounceDelay = 50;
+  drawFromTop = true;
 }
 
 void Outset::init() {
@@ -123,20 +124,40 @@ void Outset::splashState(uint8_t event) {
 }
 
 void Outset::textHistoryState(uint8_t event) {
+  drawHeader(currentState);
+
+}
+
+void Outset::drawHeader(uint8_t state) {
   tft.fillRect(0, 0, 160, 13, BLUE_MID);
   tft.drawFastHLine(0, 13, 160, BLUE_DARK);
   tft.drawFastHLine(0, 14, 160, BLUE_DARK);
   tft.setCursor(16, 3);
 
-  drawChatIcon(1, 1);
-  drawBatteryIcon(136, 1);
-  tft.print("CHATTING WITH ");
-  if (deviceID == 7) {
-    tft.print("GREY");
+  switch (state) {
+    case TEXT_HISTORY_STATE:
+      drawChatIcon(1, 1);
+      drawBatteryIcon(136, 1);
+
+      tft.print("CHATTING WITH ");
+      if (deviceID == 7) {
+        tft.print("GREY");
+      }
+      else {
+        tft.print("MATTE");
+      }
+      break;
+    case TEXT_MESSAGE_STATE:
+      tft.print("WRITE A MESSAGE");
+      break;
+    default:
+      Serial.println(F("CAN'T DRAW HEADER FOR INVALID STATE"));
+      panic();
   }
-  else {
-    tft.print("MATTE");
-  }
+}
+
+void Outset::clearTextHistoryBody() {
+  tft.fillRect(0, 15, 160, 113, ST7735_BLACK);
 }
 
 void Outset::textMessageState(uint8_t event) {

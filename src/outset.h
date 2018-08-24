@@ -34,7 +34,7 @@ class Outset {
     // The state we'll switch to for the next pass through loop()
     uint8_t nextState;
     uint8_t nextEvent;
-    // Unique board ID
+    // Comes from build flags
     uint8_t deviceID;
 
     // Watch the clock
@@ -49,6 +49,11 @@ class Outset {
     unsigned long lastTrackpadDebounce;
     unsigned long debounceDelay;
 
+    // TEXT_HISTORY_STATE helper values
+    // Draws text bubbles underneath the header until there's too many bubbles
+    // on screen
+    bool drawFromTop;
+
     // Sets the new state for the FSM to look at.
     // \param newState: The next state to swtich to. See list in "states.h"
     // \param event: The event that caused the state switch. See list in "states.h"
@@ -61,6 +66,7 @@ class Outset {
     void splashState(uint8_t event = 0);
     void textHistoryState(uint8_t event = 0);
     void textMessageState(uint8_t event = 0);
+    void clearTextHistoryBody();
 
     // Drawing Handlers
     void drawMiniLogo(uint8_t x, uint8_t y);
