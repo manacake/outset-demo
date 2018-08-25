@@ -22,6 +22,7 @@ stateInfo{
   lastTrackpadDebounce = 0;
   debounceDelay = 50;
   drawFromTop = true;
+  sumOfBubbleHeights = 0;
 }
 
 void Outset::init() {
@@ -37,7 +38,7 @@ void Outset::init() {
 
   tft.init();
   tft.setRotation(3);
-  tft.fillScreen(ST7735_BLACK);
+  tft.fillScreen(TFT_BLACK);
 
   // Set up the initial state transition.
   switchToState(initialState, INIT_BOOT);
@@ -60,7 +61,7 @@ void Outset::runFSM() {
     Serial.println(nextEvent);
 
     // Call the event handler to enter the state.
-    tft.fillScreen(ST7735_BLACK);
+    tft.fillScreen(TFT_BLACK);
     (this->*stateInfo[currentState].handler)(nextEvent);
   }
 }
@@ -87,7 +88,7 @@ void Outset::switchToState(uint8_t newState, uint8_t event) {
 }
 
 void Outset::splashState(uint8_t event) {
-  tft.setTextColor(ST7735_WHITE);
+  tft.setTextColor(TFT_WHITE);
   drawTextContainer(36, 35, 90, 55, BLUE_MODE);
   drawMiniLogo((tft.width()-11)/2, (tft.height()-32)/2);
   tft.setCursor((tft.width()-55)/2, (tft.height()-7)/2);
@@ -126,6 +127,109 @@ void Outset::splashState(uint8_t event) {
 void Outset::textHistoryState(uint8_t event) {
   drawHeader(currentState);
 
+  // Retrieve messages
+  Bubble b0("ayyyyy grey!", "10:03:45", 1);
+  Bubble b1("how are you?", "10:03:50", 1);
+  Bubble b2("let's get some lunch at the treehouse.", "10:04:10", 1);
+  textHistory[0] = b0;
+  textHistory[1] = b1;
+  textHistory[2] = b2;
+
+  // Draw from textHistory
+  drawTextHistory();
+}
+
+void Outset::drawTextHistory() {
+  if (drawFromTop) {
+    // Draw each bubble in history
+    for (uint8_t i = 0; i < 10; i++) {
+      Bubble bubble = textHistory[i];
+      bool myText = false;
+      if (sumOfBubbleHeights == 0) {
+        // Header is 16px high
+        historyY = 16;
+      } else {
+        historyY = 16 + sumOfBubbleHeights;
+      }
+
+      if (!bubble.isEmpty()) {
+        Serial.print(F("====== Drawing: "));
+        Serial.println(i);
+        Serial.print(F("height: "));
+        Serial.println(bubble.height());
+        Serial.print(F("width: "));
+        Serial.println(bubble.width());
+        // Is this my own text or somebody else's?
+        if (bubble.createdBy() == deviceID) myText = true;
+        if (myText) { // Draw my text bubble with wispy tail on right side
+          historyX = 160-(bubble.width()+6); // wispy tail is 5px + 1px gutter
+          tft.fillRoundRect(historyX, historyY, bubble.width(), bubble.height(), 4, BLUE_DARK);
+          drawWispyTail(154, historyY+(bubble.height()-5), TAIL_RIGHT_SIDE, BLUE_DARK);
+        }
+        else { // Draw other text bubble with wispy tail on the left side
+          historyX = 6;
+          tft.fillRoundRect(historyX, historyY, bubble.width(), bubble.height(), 4, BLUE_MID);
+          drawWispyTail(1, historyY+(bubble.height()-5), TAIL_LEFT_SIDE, BLUE_MID);
+        }
+        tft.setCursor(historyX+2, historyY+2);
+        tft.println(bubble.timestamp());
+        tft.setCursor(historyX+2, historyY+10);
+        tft.print(bubble.message());
+        // Save the heights of the bubbles on the screen now for next pass
+        sumOfBubbleHeights += (bubble.height() + 2); // 1px for margin
+        // If we've received more messages that can fit, start drawing bottom up
+        if (sumOfBubbleHeights > 113) {
+          Serial.print(F("Reached maximum bubbles! Sum: "));
+          Serial.println(sumOfBubbleHeights);
+          Serial.print(F("Resetting..."));
+          sumOfBubbleHeights = 0;
+          clearTextHistoryBody();
+          // drawFromTop = false;
+        }
+      }
+    }
+  }
+  else { // Draw from the bottom
+
+  }
+}
+
+void Outset::drawWispyTail(uint8_t x, uint8_t y, uint8_t side, uint16_t color) {
+  switch (side) {
+    case TAIL_LEFT_SIDE:
+      // These were added to cover up the border radius of the text bubble
+      tft.drawFastVLine(x+3, y+3, 2, color);
+      tft.drawFastVLine(x+4, y+2, 3, color);
+      tft.drawFastVLine(x+5, y+1, 4, color);
+      // Right triangle
+      tft.drawFastVLine(x+4, y, 5, color);
+      tft.drawFastVLine(x+3, y+1, 4, color);
+      tft.drawFastVLine(x+2, y+2, 3, color);
+      tft.drawFastVLine(x+1, y+3, 2, color);
+      tft.drawPixel(x, y+4, color);
+      break;
+    case TAIL_RIGHT_SIDE:
+      // These were added to cover up the border radius of the text bubble
+      tft.drawFastVLine(x-3, y+3, 2, color);
+      tft.drawFastVLine(x-2, y+2, 3, color);
+      tft.drawFastVLine(x-1, y+1, 4, color);
+      // Right triangle
+      tft.drawFastVLine(x, y, 5, color);
+      tft.drawFastVLine(x+1, y+1, 4, color);
+      tft.drawFastVLine(x+2, y+2, 3, color);
+      tft.drawFastVLine(x+3, y+3, 2, color);
+      tft.drawPixel(x+4, y+4, color);
+      break;
+  }
+}
+
+void Outset::textMessageState(uint8_t event) {
+
+}
+
+void Outset::panic() {
+  Serial.println(F("PANIC"));
+  for (;;);
 }
 
 void Outset::drawHeader(uint8_t state) {
@@ -157,16 +261,7 @@ void Outset::drawHeader(uint8_t state) {
 }
 
 void Outset::clearTextHistoryBody() {
-  tft.fillRect(0, 15, 160, 113, ST7735_BLACK);
-}
-
-void Outset::textMessageState(uint8_t event) {
-
-}
-
-void Outset::panic() {
-  Serial.println(F("PANIC"));
-  for (;;);
+  tft.fillRect(0, 15, 160, 113, TFT_BLACK);
 }
 
 void Outset::drawChatIcon(uint8_t x, uint8_t y) {
@@ -307,12 +402,12 @@ void Outset::blinkStartCursor(uint8_t x, uint8_t y) {
     startCursorLastDrawn = currentMillis;
     if (startCursorVisible) {
       // Clear cursor
-      tft.fillRect(x, y, 6, 4, ST7735_BLACK);
+      tft.fillRect(x, y, 6, 4, TFT_BLACK);
       startCursorVisible = false;
     } else { // Draw cursor
-      tft.fillRect(x, y, 6, 2, ST7735_WHITE);
-      tft.drawFastHLine(x+1, y+2, 4, ST7735_WHITE);
-      tft.drawFastHLine(x+2, y+3, 2, ST7735_WHITE);
+      tft.fillRect(x, y, 6, 2, TFT_WHITE);
+      tft.drawFastHLine(x+1, y+2, 4, TFT_WHITE);
+      tft.drawFastHLine(x+2, y+3, 2, TFT_WHITE);
       startCursorVisible = true;
     }
   }

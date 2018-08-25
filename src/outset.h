@@ -4,6 +4,7 @@
 
 #include <TFT_ST7735.h>
 #include <SPI.h>
+#include "bubble.h"
 #include "states.h"
 #include "colors.h"
 
@@ -53,6 +54,11 @@ class Outset {
     // Draws text bubbles underneath the header until there's too many bubbles
     // on screen
     bool drawFromTop;
+    int sumOfBubbleHeights;
+    Bubble textHistory[10];
+    // Keep track of the next place to draw text bubbles
+    uint8_t historyX;
+    uint8_t historyY;
 
     // Sets the new state for the FSM to look at.
     // \param newState: The next state to swtich to. See list in "states.h"
@@ -69,11 +75,14 @@ class Outset {
     void clearTextHistoryBody();
 
     // Drawing Handlers
+    void drawHeader(uint8_t state);
     void drawMiniLogo(uint8_t x, uint8_t y);
     void drawTextContainer(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t color);
     void blinkStartCursor(uint8_t x, uint8_t y);
     void drawChatIcon(uint8_t x, uint8_t y);
     void drawBatteryIcon(uint8_t x, uint8_t y);
+    void drawTextHistory();
+    void drawWispyTail(uint8_t x, uint8_t y, uint8_t side, uint16_t color);
 
     // Gets called when state doesn't exist or event is invalid.
     void panic();

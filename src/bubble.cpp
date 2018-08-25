@@ -1,7 +1,12 @@
 // bubble.cpp
+#include <math.h>
+#include <string.h>
+#include <SPI.h>
 #include "bubble.h"
 
-Bubble::Bubble(char* message, char* timestamp) {
+Bubble::Bubble() {}
+Bubble::Bubble(char* message, char* timestamp, uint8_t createdBy) {
+  _createdBy = createdBy;
   // Message length is dynamic
   uint8_t messageLen = strlen(message);
   strncpy(_message, message, messageLen);
@@ -17,11 +22,12 @@ Bubble::Bubble(char* message, char* timestamp) {
   // messageLen/25 where 25 is the max length of text in 1 row
   uint8_t rows = ceil(messageLen/25.0) + 1; // add 1 extra row for timestamp
   if (rows <= 2) {
-    height = baseHeight;
+    _height = baseHeight;
   }
   else if (rows > 2 && rows <= 10) {
+    // Add in the baseHeight and then any remaining rows is an extra 8px
     // 8 is the increment when adding another row of text
-    height = rows * 8;
+    _height = baseHeight + (rows-2) * 8;
   }
   else {
     Serial.println(F("WARNING: Trouble calculating bubble height."));
@@ -29,25 +35,35 @@ Bubble::Bubble(char* message, char* timestamp) {
     Serial.print(messageLen);
     Serial.print(F(", rows: "));
     Serial.print(rows);
-    panic();
   }
   // Calculate and store the width of the bubble
   // width of a character is 5px
   // padding on the sides is 4px
   // gutter is 1px
   if (messageLen <= 25) {
-    width = messageLen*5 + 4 + (messageLen-1)*1;
+    _width = messageLen*5 + 4 + (messageLen-1)*1;
   } else if (messageLen > 25) { // Max width bubble
-    width = (25*5) + 4 + 24;
+    _width = (25*5) + 4 + 24;
   }
 }
 
+bool Bubble::isEmpty() {
+  if (message()[0] == 0 && timestamp()[0] == 0) {
+    return true;
+  }
+  return false;
+}
+
+uint8_t Bubble::createdBy() {
+  return _createdBy;
+}
+
 uint8_t Bubble::height() {
-  return height;
+  return _height;
 }
 
 uint8_t Bubble::width() {
-  return width;
+  return _width;
 }
 
 char* Bubble::timestamp() {
