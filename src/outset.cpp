@@ -26,6 +26,7 @@ stateInfo{
   historyIndex = 0;
 }
 
+// OS
 void Outset::init() {
   // Enable level shifter and screen
   pinMode(LVL_SHIFT_EN, OUTPUT);
@@ -67,6 +68,11 @@ void Outset::runFSM() {
   }
 }
 
+void Outset::panic() {
+  Serial.println(F("PANIC"));
+  for (;;);
+}
+
 void Outset::switchToState(uint8_t newState, uint8_t event) {
   if ((newState <= INVALID_STATE) || (newState >= NUM_STATES)) {
     Serial.print(F("cannot switch to state "));
@@ -88,6 +94,7 @@ void Outset::switchToState(uint8_t newState, uint8_t event) {
   nextEvent = event;
 }
 
+// State handlers ============================================================
 void Outset::splashState(uint8_t event) {
   tft.setTextColor(TFT_WHITE);
   drawTextContainer(36, 35, 90, 55, BLUE_MODE);
@@ -125,6 +132,54 @@ void Outset::splashState(uint8_t event) {
   }
 }
 
+void Outset::blinkStartCursor(uint8_t x, uint8_t y) {
+  if (!startCursorEnabled) return;
+
+  currentMillis = millis();
+  if (currentMillis - startCursorLastDrawn > 1000) {
+    // Save the last time cursor was updated
+    startCursorLastDrawn = currentMillis;
+    if (startCursorVisible) {
+      // Clear cursor
+      tft.fillRect(x, y, 6, 4, TFT_BLACK);
+      startCursorVisible = false;
+    } else { // Draw cursor
+      tft.fillRect(x, y, 6, 2, TFT_WHITE);
+      tft.drawFastHLine(x+1, y+2, 4, TFT_WHITE);
+      tft.drawFastHLine(x+2, y+3, 2, TFT_WHITE);
+      startCursorVisible = true;
+    }
+  }
+}
+
+void Outset::textHistoryState(uint8_t event) {
+  drawHeader(currentState);
+
+  // testMessages();
+}
+
+void Outset::textMessageState(uint8_t event) {
+
+}
+
+void Outset::pushMessage(char* message, char* timestamp, uint8_t createdBy) {
+  Bubble b(message, timestamp, createdBy);
+  // textHistory can only hold 6 messages
+  if (historyIndex >= 6) { // We're at max capacity!
+    // Shift all bubbles left
+    for (uint8_t i = 1; i < 7; i++) {
+      memcpy(&textHistory[i-1], &textHistory[i], sizeof(textHistory[i]));
+    }
+    // Add the new text bubble at the end
+    textHistory[6] = b;
+  }
+  else {
+    textHistory[historyIndex] = b;
+    historyIndex++;
+  }
+}
+
+// Tests =====================================================================
 void Outset::testMessages() {
   // Simulate messaging
   // Only 5 messsages can fit on a screen (if they're single lined)
@@ -147,29 +202,7 @@ void Outset::testMessages() {
   drawTextHistory();
 }
 
-void Outset::pushMessage(char* message, char* timestamp, uint8_t createdBy) {
-  Bubble b(message, timestamp, createdBy);
-  // textHistory can only hold 6 messages
-  if (historyIndex >= 6) { // We're at max capacity!
-    // Shift all bubbles left
-    for (uint8_t i = 1; i < 7; i++) {
-      memcpy(&textHistory[i-1], &textHistory[i], sizeof(textHistory[i]));
-    }
-    // Add the new text bubble at the end
-    textHistory[6] = b;
-  }
-  else {
-    textHistory[historyIndex] = b;
-    historyIndex++;
-  }
-}
-
-void Outset::textHistoryState(uint8_t event) {
-  drawHeader(currentState);
-
-  testMessages();
-}
-
+// Drawing helpers ===========================================================
 void Outset::drawBubble(Bubble bubble) {
   Serial.println(F("drawBubble enter"));
   // Is this my own text or somebody else's?
@@ -272,15 +305,6 @@ void Outset::drawWispyTail(uint8_t x, uint8_t y, uint8_t side, uint16_t color) {
   }
 }
 
-void Outset::textMessageState(uint8_t event) {
-
-}
-
-void Outset::panic() {
-  Serial.println(F("PANIC"));
-  for (;;);
-}
-
 void Outset::drawHeader(uint8_t state) {
   tft.fillRect(0, 0, 160, 13, BLUE_MID);
   tft.drawFastHLine(0, 13, 160, BLUE_DARK);
@@ -352,7 +376,6 @@ void Outset::drawBatteryIcon(uint8_t x, uint8_t y) {
   tft.drawFastVLine(x+19, y+5, 4, GREEN_DARK);
 }
 
-// Draw mini logo starting at given x,y coords
 void Outset::drawMiniLogo(uint8_t x, uint8_t y) {
   // Face outline
   tft.drawFastHLine(x+1, y, 2, BLUE_LIGHTEST);
@@ -389,7 +412,6 @@ void Outset::drawMiniLogo(uint8_t x, uint8_t y) {
   tft.drawPixel(x+8, y+7, BLUE_LIGHT);
 }
 
-// Draws a text container given x,y coords and width,height
 void Outset::drawTextContainer(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t color) {
   if (color == BLUE_MODE) {
     tft.drawRect(x, y, w, h, BLUE_MID); // main border
@@ -440,25 +462,5 @@ void Outset::drawTextContainer(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8
     tft.fillRect(x+5, y+2, w-10, 2, PINK_DARK); // shadow
     tft.fillRect(x+2, y+5, 3, 2, PINK_DARK);
     tft.fillRect(x+(w-5), y+5, 3, 2, PINK_DARK);
-  }
-}
-
-void Outset::blinkStartCursor(uint8_t x, uint8_t y) {
-  if (!startCursorEnabled) return;
-
-  currentMillis = millis();
-  if (currentMillis - startCursorLastDrawn > 1000) {
-    // Save the last time cursor was updated
-    startCursorLastDrawn = currentMillis;
-    if (startCursorVisible) {
-      // Clear cursor
-      tft.fillRect(x, y, 6, 4, TFT_BLACK);
-      startCursorVisible = false;
-    } else { // Draw cursor
-      tft.fillRect(x, y, 6, 2, TFT_WHITE);
-      tft.drawFastHLine(x+1, y+2, 4, TFT_WHITE);
-      tft.drawFastHLine(x+2, y+3, 2, TFT_WHITE);
-      startCursorVisible = true;
-    }
   }
 }
