@@ -55,10 +55,11 @@ class Outset {
     // on screen
     bool drawFromTop;
     int sumOfBubbleHeights;
-    Bubble textHistory[10];
+    uint8_t historyIndex;
+    Bubble textHistory[7]; // Only keep 6 messages for now...
     // Keep track of the next place to draw text bubbles
-    uint8_t historyX;
-    uint8_t historyY;
+    int historyX;
+    int historyY;
 
     // Sets the new state for the FSM to look at.
     // \param newState: The next state to swtich to. See list in "states.h"
@@ -83,6 +84,10 @@ class Outset {
     void drawBatteryIcon(uint8_t x, uint8_t y);
     void drawTextHistory();
     void drawWispyTail(uint8_t x, uint8_t y, uint8_t side, uint16_t color);
+    void drawBubble(Bubble bubble);
+
+    void pushMessage(char* timestamp, char* message, uint8_t createdBy);
+    void testMessages();
 
     // Gets called when state doesn't exist or event is invalid.
     void panic();

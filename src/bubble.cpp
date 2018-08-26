@@ -41,7 +41,8 @@ Bubble::Bubble(char* message, char* timestamp, uint8_t createdBy) {
   // padding on the sides is 4px
   // gutter is 1px
   if (messageLen <= 25) {
-    _width = messageLen*5 + 4 + (messageLen-1)*1;
+    // 51px is the min width of the timestamp (8*5px)
+    _width = max(51, messageLen*5 + 4 + (messageLen-1)*1);
   } else if (messageLen > 25) { // Max width bubble
     _width = (25*5) + 4 + 24;
   }

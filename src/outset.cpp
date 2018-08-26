@@ -23,6 +23,7 @@ stateInfo{
   debounceDelay = 50;
   drawFromTop = true;
   sumOfBubbleHeights = 0;
+  historyIndex = 0;
 }
 
 void Outset::init() {
@@ -124,74 +125,123 @@ void Outset::splashState(uint8_t event) {
   }
 }
 
-void Outset::textHistoryState(uint8_t event) {
-  drawHeader(currentState);
-
-  // Retrieve messages
-  Bubble b0("ayyyyy grey!", "10:03:45", 1);
-  Bubble b1("how are you?", "10:03:50", 1);
-  Bubble b2("let's get some lunch at the treehouse.", "10:04:10", 1);
-  textHistory[0] = b0;
-  textHistory[1] = b1;
-  textHistory[2] = b2;
-
-  // Draw from textHistory
+void Outset::testMessages() {
+  // Simulate messaging
+  // Only 5 messsages can fit on a screen (if they're single lined)
+  pushMessage("AYYY MATTE!", "10:03:45", 1);
+  drawTextHistory();
+  delay(2000);
+  pushMessage("HEY GREY", "10:03:48", deviceID);
+  drawTextHistory();
+  delay(2000);
+  pushMessage("HOW ARE YOU?", "10:04:51", 1);
+  drawTextHistory();
+  delay(1000);
+  pushMessage("LET'S DO LUNCH", "10:04:52", 1);
+  drawTextHistory();
+  delay(2000);
+  pushMessage("PANCAKES ARE GOOD", "10:04:54", deviceID);
+  drawTextHistory();
+  delay(1000);
+  pushMessage("YUM", "10:04:55", deviceID);
   drawTextHistory();
 }
 
+void Outset::pushMessage(char* message, char* timestamp, uint8_t createdBy) {
+  Bubble b(message, timestamp, createdBy);
+  // textHistory can only hold 6 messages
+  if (historyIndex >= 6) { // We're at max capacity!
+    // Shift all bubbles left
+    for (uint8_t i = 1; i < 7; i++) {
+      memcpy(&textHistory[i-1], &textHistory[i], sizeof(textHistory[i]));
+    }
+    // Add the new text bubble at the end
+    textHistory[6] = b;
+  }
+  else {
+    textHistory[historyIndex] = b;
+    historyIndex++;
+  }
+}
+
+void Outset::textHistoryState(uint8_t event) {
+  drawHeader(currentState);
+
+  testMessages();
+}
+
+void Outset::drawBubble(Bubble bubble) {
+  Serial.println(F("drawBubble enter"));
+  // Is this my own text or somebody else's?
+  if (bubble.createdBy() == deviceID) { // Draw my text bubble with wispy tail on right side
+    historyX = 160-(bubble.width()+6); // wispy tail is 5px + 1px gutter
+    tft.fillRoundRect(historyX, historyY, bubble.width(), bubble.height(), 4, BLUE_DARK);
+    drawWispyTail(154, historyY+(bubble.height()-5), TAIL_RIGHT_SIDE, BLUE_DARK);
+  }
+  else { // Draw other text bubble with wispy tail on the left side
+    historyX = 6;
+    tft.fillRoundRect(historyX, historyY, bubble.width(), bubble.height(), 4, BLUE_MID);
+    drawWispyTail(1, historyY+(bubble.height()-5), TAIL_LEFT_SIDE, BLUE_MID);
+  }
+  tft.setCursor(historyX+2, historyY+2);
+  tft.println(bubble.timestamp());
+  tft.setCursor(historyX+2, historyY+10);
+  tft.print(bubble.message());
+  // Save the heights of the bubbles on the screen now for next pass
+  sumOfBubbleHeights += (bubble.height() + 2); // 1px for margin
+  // If we've received more messages that can fit, start drawing bottom up
+  if (drawFromTop && sumOfBubbleHeights > 99) {
+    Serial.print(F("Reached maximum bubbles from top down! Sum: "));
+    Serial.println(sumOfBubbleHeights);
+    Serial.println(F("Now drawing from bottom up!"));
+    drawFromTop = false;
+  }
+}
+
 void Outset::drawTextHistory() {
+  clearTextHistoryBody();
+  // Draw each bubble in history
   if (drawFromTop) {
-    // Draw each bubble in history
-    for (uint8_t i = 0; i < 10; i++) {
+    for (uint8_t i = 0; i < 7; i++) {
       Bubble bubble = textHistory[i];
-      bool myText = false;
       if (sumOfBubbleHeights == 0) {
         // Header is 16px high
         historyY = 16;
       } else {
         historyY = 16 + sumOfBubbleHeights;
       }
-
       if (!bubble.isEmpty()) {
-        Serial.print(F("====== Drawing: "));
+        Serial.print(F("call drawBubble: "));
         Serial.println(i);
-        Serial.print(F("height: "));
-        Serial.println(bubble.height());
-        Serial.print(F("width: "));
-        Serial.println(bubble.width());
-        // Is this my own text or somebody else's?
-        if (bubble.createdBy() == deviceID) myText = true;
-        if (myText) { // Draw my text bubble with wispy tail on right side
-          historyX = 160-(bubble.width()+6); // wispy tail is 5px + 1px gutter
-          tft.fillRoundRect(historyX, historyY, bubble.width(), bubble.height(), 4, BLUE_DARK);
-          drawWispyTail(154, historyY+(bubble.height()-5), TAIL_RIGHT_SIDE, BLUE_DARK);
-        }
-        else { // Draw other text bubble with wispy tail on the left side
-          historyX = 6;
-          tft.fillRoundRect(historyX, historyY, bubble.width(), bubble.height(), 4, BLUE_MID);
-          drawWispyTail(1, historyY+(bubble.height()-5), TAIL_LEFT_SIDE, BLUE_MID);
-        }
-        tft.setCursor(historyX+2, historyY+2);
-        tft.println(bubble.timestamp());
-        tft.setCursor(historyX+2, historyY+10);
-        tft.print(bubble.message());
-        // Save the heights of the bubbles on the screen now for next pass
-        sumOfBubbleHeights += (bubble.height() + 2); // 1px for margin
-        // If we've received more messages that can fit, start drawing bottom up
-        if (sumOfBubbleHeights > 113) {
-          Serial.print(F("Reached maximum bubbles! Sum: "));
-          Serial.println(sumOfBubbleHeights);
-          Serial.print(F("Resetting..."));
-          sumOfBubbleHeights = 0;
-          clearTextHistoryBody();
-          // drawFromTop = false;
-        }
+        Serial.print(F("Y axis: "));
+        Serial.println(historyY);
+        drawBubble(bubble);
       }
     }
   }
-  else { // Draw from the bottom
-
+  else { // Draw bubbles from the bottom up
+    for (int8_t i = 6; i >= 0; i--) {
+      Bubble bubble = textHistory[i];
+      if (i == 6) {
+        // Header is 16px high
+        historyY = 108;
+        sumOfBubbleHeights = 0; // Reset when drawing from beginning
+      } else {
+        historyY = 108 - sumOfBubbleHeights;
+      }
+      if (!bubble.isEmpty() && historyY >= 0) {
+        Serial.print(F("call drawBubble: "));
+        Serial.println(i);
+        Serial.print(F("Y axis: "));
+        Serial.println(historyY);
+        drawBubble(bubble);
+      }
+    }
+    // Draw the header again because we drew over it
+    drawHeader(currentState);
   }
+  // Reset at the end because we're drawing all history every loop
+  sumOfBubbleHeights = 0;
 }
 
 void Outset::drawWispyTail(uint8_t x, uint8_t y, uint8_t side, uint16_t color) {
@@ -260,6 +310,7 @@ void Outset::drawHeader(uint8_t state) {
 }
 
 void Outset::clearTextHistoryBody() {
+  Serial.println(F("clearTextHistoryBody"));
   tft.fillRect(0, 15, 160, 113, TFT_BLACK);
 }
 
