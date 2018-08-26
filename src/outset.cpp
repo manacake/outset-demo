@@ -198,9 +198,8 @@ void Outset::drawWispyTail(uint8_t x, uint8_t y, uint8_t side, uint16_t color) {
   switch (side) {
     case TAIL_LEFT_SIDE:
       // These were added to cover up the border radius of the text bubble
-      tft.drawFastVLine(x+3, y+3, 2, color);
-      tft.drawFastVLine(x+4, y+2, 3, color);
-      tft.drawFastVLine(x+5, y+1, 4, color);
+      tft.drawFastHLine(x+5, y+4, 3, color);
+      tft.drawFastVLine(x+5, y+1, 3, color);
       // Right triangle
       tft.drawFastVLine(x+4, y, 5, color);
       tft.drawFastVLine(x+3, y+1, 4, color);
