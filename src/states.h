@@ -7,7 +7,8 @@
 #define SPLASH_STATE            1
 #define TEXT_HISTORY_STATE      2
 #define TEXT_MESSAGE_STATE      3
-#define NUM_STATES              4
+#define TEXT_SEND_STATE         4
+#define NUM_STATES              5
 
 // State machine events
 // 0 can also be passed as an event...

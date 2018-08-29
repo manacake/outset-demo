@@ -18,7 +18,8 @@ stateInfo{
   { F("INVALID_STATE"), NULL },
   { F("SPLASH_STATE"), &Outset::splashState },
   { F("TEXT_HISTORY_STATE"), &Outset::textHistoryState },
-  { F("TEXT_MESSAGE_STATE"), &Outset::textMessageState }
+  { F("TEXT_MESSAGE_STATE"), &Outset::textMessageState },
+  { F("TEXT_SEND_STATE"), &Outset::textSendState },
 }
 {
   initialState = SPLASH_STATE;
@@ -106,14 +107,17 @@ void Outset::keypadEvent() {
     }
     case TEXT_MESSAGE_STATE: {
       // We've reached the end, draw cursor on the next line
-      if (messageX + 6 > 156) {
-        blinkTextCursor(messageX, messageY + 8);
+      if (messageX+6 > 158) {
+        blinkTextCursor(2, messageY + 8);
+        // tft.fillRect(2, messageY+8, 6, 8, BLUE_LIGHT);
       }
       else if (outgoingMessageLen == 0) {
         blinkTextCursor(messageX, messageY);
+        // tft.fillRect(messageX, messageY, 6, 8, BLUE_LIGHT);
       }
       else {
-        blinkTextCursor(messageX + 6, messageY);
+        blinkTextCursor(messageX+6, messageY);
+        // tft.fillRect(messageX+6, messageY, 6, 8, BLUE_LIGHT);
       }
 
       // Scan for keys and draw them on the screen
@@ -122,7 +126,9 @@ void Outset::keypadEvent() {
           if (keypad.key[i].stateChanged) {
             switch (keypad.key[i].kstate) {
               case PRESSED:
-                if (keypad.key[i].kchar == '^') {
+                if (keypad.key[i].kchar == '[') {
+                  switchToState(TEXT_SEND_STATE, CONFIRM);
+                } else if (keypad.key[i].kchar == '^') {
                   shiftPressed = true;
                 } else if (keypad.key[i].kchar == '=') {
                   symPressed = true;
@@ -145,7 +151,7 @@ void Outset::keypadEvent() {
       if (outgoingMessageUpdate) {
         if (lastOutgoingMessageLen > outgoingMessageLen) {
           // clearTextHistoryBody();
-          tft.fillRect(messageX+6, messageY, 160, 8, TFT_BLACK);
+          tft.fillRect(messageX+6, messageY, 14, 8, TFT_BLACK);
         }
         else {
           tft.setCursor(messageX, messageY);
@@ -222,7 +228,7 @@ void Outset::addCharToMessage(char key) {
       && key != '>' && key != '<') {
         // Figure out where this char will be printed
         if (outgoingMessageLen != 0) messageX += 6;
-        if (messageX + 6 > 156) { // We've reached the end of the screen
+        if (messageX+6 > 158) { // We've reached the end of the screen
           messageX = 2; // Reset to next row
           messageY += 8;
         }
@@ -349,9 +355,23 @@ void Outset::textHistoryState(uint8_t event) {
 void Outset::textMessageState(uint8_t event) {
   drawHeader(currentState);
   tft.setTextColor(TFT_WHITE, TFT_BLACK);
+  // Reset all the message vars
+  outgoingMessage[0] = '\0';
+  outgoingMessageLen = 0;
+  lastOutgoingMessageLen = 0;
+  outgoingMessageUpdate = false;
+  messageX = 2;
+  messageY = 17;
+  messageWidth = 0;
+
   while (nextState == TEXT_MESSAGE_STATE) {
     keypadEvent();
   }
+}
+
+void Outset::textSendState(uint8_t event) {
+  tft.setTextColor(TFT_WHITE);
+  drawHeader(currentState);
 }
 
 void Outset::pushMessage(const char* message, const char* timestamp, uint8_t createdBy) {
@@ -518,6 +538,9 @@ void Outset::drawHeader(uint8_t state) {
       break;
     case TEXT_MESSAGE_STATE:
       tft.print("WRITE A MESSAGE");
+      break;
+    case TEXT_SEND_STATE:
+      tft.print("SENDING MESSAGE");
       break;
     default:
       Serial.println(F("CAN'T DRAW HEADER FOR INVALID STATE"));

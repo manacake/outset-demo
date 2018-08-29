@@ -80,6 +80,7 @@ class Outset {
     void splashState(uint8_t event = 0);
     void textHistoryState(uint8_t event = 0);
     void textMessageState(uint8_t event = 0);
+    void textSendState(uint8_t event = 0);
     void clearTextHistoryBody();
 
     void keypadEvent();
