@@ -12,7 +12,7 @@
 class Bubble {
   public:
     Bubble();
-    Bubble(char* message, char* timestamp, uint8_t createdBy);
+    Bubble(const char* message, const char* timestamp, uint8_t createdBy);
     // Get the timestamp of a bubble instance
     char* timestamp();
     // Get the message of a bubble instance

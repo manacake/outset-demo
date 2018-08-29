@@ -4,6 +4,7 @@
 
 #include <TFT_ST7735.h>
 #include <SPI.h>
+#include <Keypad.h>
 #include "bubble.h"
 #include "states.h"
 #include "colors.h"
@@ -18,6 +19,7 @@ class Outset {
 
   private:
     TFT_ST7735 tft;
+    Keypad keypad;
 
     // Array of function pointers modeling outset's state (view)
     // index represents the state
@@ -43,7 +45,12 @@ class Outset {
     // Keep state of blinking cursor on splash state
     unsigned long startCursorLastDrawn; // in ms
     bool startCursorVisible;
-    bool startCursorEnabled;
+
+    const char keypadKeys[KEYPAD_ROWS][KEYPAD_COLS];
+    const uint8_t keypadRowPins[KEYPAD_ROWS];
+    const uint8_t keypadColPins[KEYPAD_COLS];
+    bool shiftPressed;
+    bool symPressed;
 
     uint8_t trackpadState;
     uint8_t lastTrackpadState;
@@ -75,6 +82,18 @@ class Outset {
     void textMessageState(uint8_t event = 0);
     void clearTextHistoryBody();
 
+    void keypadEvent();
+    void addCharToMessage(char key);
+    char getShiftedKey(char key);
+    char getSymKey(char key);
+    char outgoingMessage[250];
+    uint8_t outgoingMessageLen;
+    uint8_t lastOutgoingMessageLen;
+    bool outgoingMessageUpdate; // Indicates whether screen needs update
+    uint8_t messageX; // The cursor on textMessageState
+    uint8_t messageY;
+    uint8_t messageWidth;
+
     // Drawing Handlers
     void drawHeader(uint8_t state);
     void drawMiniLogo(uint8_t x, uint8_t y);
@@ -86,8 +105,13 @@ class Outset {
     void drawWispyTail(uint8_t x, uint8_t y, uint8_t side, uint16_t color);
     void drawBubble(Bubble bubble);
 
-    void pushMessage(char* timestamp, char* message, uint8_t createdBy);
+    // Message Handlers
+    void pushMessage(const char* message, const char* timestamp, uint8_t createdBy);
     void testMessages();
+
+    // Keyboard event handler
+    void keypadEvent(KeypadEvent key);
+    void blinkTextCursor(uint8_t x, uint8_t y);
 
     // Gets called when state doesn't exist or event is invalid.
     void panic();

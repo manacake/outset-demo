@@ -4,6 +4,16 @@
 Outset::Outset()
 :
 tft(),
+keypadKeys{ // '`' denotes an unmapped character
+  {'`', '`', '{', '[', '`', '`', ']', '}', '`', '`'},
+  {'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'},
+  {'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', '~'},
+  {'>', 'z', 'x', 'c', 'v', 'b', 'n', 'm', '$', '<'},
+  {'`', '`', '`', '^', '0', ' ', '=', '^', '`', '`'}
+},
+keypadRowPins{ROW_1, ROW_2, ROW_3, ROW_4, ROW_5},
+keypadColPins{COL_1, COL_2, COL_3, COL_4, COL_5, COL_6, COL_7, COL_8, COL_9, COL_10},
+keypad(makeKeymap(keypadKeys), keypadRowPins, keypadColPins, KEYPAD_ROWS, KEYPAD_COLS),
 stateInfo{
   { F("INVALID_STATE"), NULL },
   { F("SPLASH_STATE"), &Outset::splashState },
@@ -14,16 +24,25 @@ stateInfo{
   initialState = SPLASH_STATE;
   currentState = INVALID_STATE;
   deviceID = DEVICE_ID;
-
+  // Splash screen state defaults
   startCursorLastDrawn = 0;
   startCursorVisible = false;
-  startCursorEnabled = true;
   lastTrackpadState = LOW;
   lastTrackpadDebounce = 0;
   debounceDelay = 50;
+  // Text history defaults
   drawFromTop = true;
   sumOfBubbleHeights = 0;
   historyIndex = 0;
+  // Keyboard defaults
+  outgoingMessageLen = 0;
+  shiftPressed = false;
+  symPressed = false;
+  messageX = 2;
+  messageY = 17;
+  // Text message defaults
+  outgoingMessageUpdate = false;
+  messageWidth = 0;
 }
 
 // OS
@@ -41,6 +60,7 @@ void Outset::init() {
   tft.init();
   tft.setRotation(3);
   tft.fillScreen(TFT_BLACK);
+  keypad.setDebounceTime(10);
 
   // Set up the initial state transition.
   switchToState(initialState, INIT_BOOT);
@@ -71,6 +91,151 @@ void Outset::runFSM() {
 void Outset::panic() {
   Serial.println(F("PANIC"));
   for (;;);
+}
+
+void Outset::keypadEvent() {
+  switch (currentState) {
+    case TEXT_HISTORY_STATE: {
+      char key = keypad.getKey();
+      if (key && key == '{') {
+        Serial.print(F("pressed: "));
+        Serial.println(key);
+        switchToState(TEXT_MESSAGE_STATE, CONFIRM);
+      }
+      break;
+    }
+    case TEXT_MESSAGE_STATE: {
+      // We've reached the end, draw cursor on the next line
+      if (messageX + 6 > 156) {
+        blinkTextCursor(messageX, messageY + 8);
+      }
+      else if (outgoingMessageLen == 0) {
+        blinkTextCursor(messageX, messageY);
+      }
+      else {
+        blinkTextCursor(messageX + 6, messageY);
+      }
+
+      // Scan for keys and draw them on the screen
+      if (keypad.getKeys()) {
+        for (uint8_t i = 0; i < LIST_MAX; i++) {
+          if (keypad.key[i].stateChanged) {
+            switch (keypad.key[i].kstate) {
+              case PRESSED:
+                if (keypad.key[i].kchar == '^') {
+                  shiftPressed = true;
+                } else if (keypad.key[i].kchar == '=') {
+                  symPressed = true;
+                } else {
+                  addCharToMessage(keypad.key[i].kchar);
+                }
+                break;
+              case RELEASED:
+                if (keypad.key[i].kchar == '^') {
+                  shiftPressed = false;
+                } else if (keypad.key[i].kchar == '=') {
+                  symPressed = false;
+                }
+                break;
+            }
+          }
+        }
+      }
+      // Only draw to screen when there is a change
+      if (outgoingMessageUpdate) {
+        if (lastOutgoingMessageLen > outgoingMessageLen) {
+          // clearTextHistoryBody();
+          tft.fillRect(messageX+6, messageY, 160, 8, TFT_BLACK);
+        }
+        else {
+          tft.setCursor(messageX, messageY);
+          // Print the last char entered
+          tft.print(outgoingMessage[outgoingMessageLen-1]);
+        }
+        outgoingMessageUpdate = false;
+      }
+      break; // break for textMessageState
+    }
+  }
+}
+
+char Outset::getShiftedKey(char key) {
+  return toupper(key);
+}
+
+char Outset::getSymKey(char key) {
+  if (key == 'q') return '#';
+  else if (key == 'w') return '1';
+  else if (key == 'e') return '2';
+  else if (key == 'r') return '3';
+  else if (key == 't') return '(';
+  else if (key == 'y') return ')';
+  else if (key == 'u') return '_';
+  else if (key == 'i') return '-';
+  else if (key == 'o') return '+';
+  else if (key == 'p') return '@';
+  else if (key == 'a') return '*';
+  else if (key == 's') return '4';
+  else if (key == 'd') return '5';
+  else if (key == 'f') return '6';
+  else if (key == 'g') return '/';
+  else if (key == 'h') return ':';
+  else if (key == 'j') return ';';
+  else if (key == 'k') return '\'';
+  else if (key == 'l') return '"';
+  else if (key == 'z') return '7';
+  else if (key == 'x') return '8';
+  else if (key == 'c') return '9';
+  else if (key == 'v') return '?';
+  else if (key == 'b') return '!';
+  else if (key == 'n') return ',';
+  else if (key == 'm') return '.';
+}
+
+void Outset::addCharToMessage(char key) {
+  if (shiftPressed) {
+    key = getShiftedKey(key);
+  }
+  else if (symPressed) {
+    key = getSymKey(key);
+  }
+  Serial.print(F("trying char: "));
+  Serial.println(key);
+  lastOutgoingMessageLen = outgoingMessageLen;
+  // Delete last char
+  if (key == '~' && outgoingMessageLen != 0) {
+    Serial.println(F("deleting last char"));
+    outgoingMessageLen--;
+    outgoingMessage[outgoingMessageLen] = '\0';
+    messageX -= 6;
+    if (messageX == 2 && outgoingMessageLen > 1)  {
+      messageX = 152;
+      messageY -= 8;
+    }
+    Serial.print(F("messageX: "));
+    Serial.println(messageX);
+  }
+  // We still have space for 2 chars! (char + null)
+  else if (outgoingMessageLen < 248) {
+    // We have a valid printable key
+    if (key != '{' && key != '}' && key != '[' && key != ']'
+      && key != '>' && key != '<') {
+        // Figure out where this char will be printed
+        if (outgoingMessageLen != 0) messageX += 6;
+        if (messageX + 6 > 156) { // We've reached the end of the screen
+          messageX = 2; // Reset to next row
+          messageY += 8;
+        }
+        outgoingMessage[outgoingMessageLen] = key;
+        outgoingMessageLen++;
+        outgoingMessage[outgoingMessageLen] = '\0';
+    }
+  }
+  outgoingMessageUpdate = true;
+  Serial.print(F("message now: "));
+  Serial.println(outgoingMessage);
+  Serial.print(F("len: "));
+  Serial.println(outgoingMessageLen);
 }
 
 void Outset::switchToState(uint8_t newState, uint8_t event) {
@@ -116,7 +281,6 @@ void Outset::splashState(uint8_t event) {
         trackpadState = trackpadReading;
         // Trackpad button was pushed! Navigate to the next state
         if (trackpadState == HIGH) {
-          startCursorEnabled = false;
           // Use transition
           for (uint8_t i = 0; i < 4; i++) {
             drawTextContainer(36, 35, 90, 55, PINK_MODE);
@@ -133,7 +297,7 @@ void Outset::splashState(uint8_t event) {
 }
 
 void Outset::blinkStartCursor(uint8_t x, uint8_t y) {
-  if (!startCursorEnabled) return;
+  if (currentState != SPLASH_STATE) return;
 
   currentMillis = millis();
   if (currentMillis - startCursorLastDrawn > 1000) {
@@ -152,17 +316,45 @@ void Outset::blinkStartCursor(uint8_t x, uint8_t y) {
   }
 }
 
+// TODO: refactor this (is still using start cursor vars)
+void Outset::blinkTextCursor(uint8_t x, uint8_t y) {
+  if (currentState != TEXT_MESSAGE_STATE) return;
+
+  currentMillis = millis();
+  if (currentMillis - startCursorLastDrawn > 1000) {
+    // Save the last time cursor was updated
+    startCursorLastDrawn = currentMillis;
+    if (startCursorVisible) {
+      // Clear cursor
+      tft.fillRect(x, y, 6, 8, TFT_BLACK);
+      startCursorVisible = false;
+    } else { // Draw cursor
+      tft.fillRect(x, y, 6, 8, TFT_WHITE);
+      startCursorVisible = true;
+    }
+  }
+}
+
 void Outset::textHistoryState(uint8_t event) {
   drawHeader(currentState);
-
-  // testMessages();
+  if (textHistory[0].isEmpty()) {
+    tft.setCursor(35, 60);
+    tft.print("PRESS GREEN TO TEXT");
+  }
+  while (nextState == TEXT_HISTORY_STATE) {
+    keypadEvent();
+  }
 }
 
 void Outset::textMessageState(uint8_t event) {
-
+  drawHeader(currentState);
+  tft.setTextColor(TFT_WHITE, TFT_BLACK);
+  while (nextState == TEXT_MESSAGE_STATE) {
+    keypadEvent();
+  }
 }
 
-void Outset::pushMessage(char* message, char* timestamp, uint8_t createdBy) {
+void Outset::pushMessage(const char* message, const char* timestamp, uint8_t createdBy) {
   Bubble b(message, timestamp, createdBy);
   // textHistory can only hold 6 messages
   if (historyIndex >= 6) { // We're at max capacity!

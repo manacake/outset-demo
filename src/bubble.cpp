@@ -5,7 +5,7 @@
 #include "bubble.h"
 
 Bubble::Bubble() {}
-Bubble::Bubble(char* message, char* timestamp, uint8_t createdBy) {
+Bubble::Bubble(const char* message, const char* timestamp, uint8_t createdBy) {
   _createdBy = createdBy;
   // Message length is dynamic
   uint8_t messageLen = strlen(message);
