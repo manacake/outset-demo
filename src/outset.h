@@ -2,6 +2,7 @@
 #ifndef Outset_h
 #define Outset_h
 
+#include <RH_RF95.h>
 #include <TFT_ST7735.h>
 #include <SPI.h>
 #include <Keypad.h>
@@ -18,6 +19,7 @@ class Outset {
     void runFSM();
 
   private:
+    RH_RF95 radio;
     TFT_ST7735 tft;
     Keypad keypad;
 
@@ -81,7 +83,7 @@ class Outset {
     void textHistoryState(uint8_t event = 0);
     void textMessageState(uint8_t event = 0);
     void textSendState(uint8_t event = 0);
-    void clearTextHistoryBody();
+    void clearBody();
 
     void keypadEvent();
     void addCharToMessage(char key);
@@ -94,6 +96,9 @@ class Outset {
     uint8_t messageX; // The cursor on textMessageState
     uint8_t messageY;
     uint8_t messageWidth;
+    char incomingMessage[RH_RF95_MAX_MESSAGE_LEN];
+    uint8_t incomingMessageLen;
+    bool textHistoryNeedsUpdate;
 
     // Drawing Handlers
     void drawHeader(uint8_t state);
@@ -108,6 +113,7 @@ class Outset {
 
     // Message Handlers
     void pushMessage(const char* message, const char* timestamp, uint8_t createdBy);
+    void listenForIncomingMessages();
     void testMessages();
 
     // Keyboard event handler

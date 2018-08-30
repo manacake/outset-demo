@@ -3,6 +3,7 @@
 
 Outset::Outset()
 :
+radio(RFM_CS, RFM_INT),
 tft(),
 keypadKeys{ // '`' denotes an unmapped character
   {'`', '`', '{', '[', '`', '`', ']', '}', '`', '`'},
@@ -35,6 +36,7 @@ stateInfo{
   drawFromTop = true;
   sumOfBubbleHeights = 0;
   historyIndex = 0;
+  textHistoryNeedsUpdate = false;
   // Keyboard defaults
   outgoingMessageLen = 0;
   shiftPressed = false;
@@ -44,10 +46,35 @@ stateInfo{
   // Text message defaults
   outgoingMessageUpdate = false;
   messageWidth = 0;
+  incomingMessageLen = RH_RF95_MAX_MESSAGE_LEN;
 }
 
 // OS
 void Outset::init() {
+  RH_RF95::ModemConfig modemConfig = {
+    0x78, // Reg 0x1D: BW=125kHz, Coding=4/8, Header=explicit
+    0xc4, // Reg 0x1E: Spread=4096chips/symbol, CRC=enable
+    0x0c  // Reg 0x26: LowDataRate=On, Agc=ON (Automatic gain control)
+  };
+  // Give power to the radio module
+  pinMode(RFM_PWR_EN, OUTPUT);
+  digitalWrite(RFM_PWR_EN, LOW);
+  // Init radio
+  if (!radio.init()) {
+    Serial.println(F("init failed"));
+    panic();
+  }
+  else if (!radio.setFrequency(915.0)) {
+    Serial.println(F("set freq failed"));
+    panic();
+  }
+  else {
+    radio.setTxPower(20, false);
+    radio.setModemRegisters(&modemConfig);
+    // driver.setTimeout(500); // only available in reliable datagram
+    Serial.println(F("radio init complete"));
+  }
+
   // Enable level shifter and screen
   pinMode(LVL_SHIFT_EN, OUTPUT);
   digitalWrite(LVL_SHIFT_EN, LOW);
@@ -84,6 +111,7 @@ void Outset::runFSM() {
     Serial.println(nextEvent);
 
     // Call the event handler to enter the state.
+    delay(500);
     tft.fillScreen(TFT_BLACK);
     (this->*stateInfo[currentState].handler)(nextEvent);
   }
@@ -150,7 +178,7 @@ void Outset::keypadEvent() {
       // Only draw to screen when there is a change
       if (outgoingMessageUpdate) {
         if (lastOutgoingMessageLen > outgoingMessageLen) {
-          // clearTextHistoryBody();
+          // clearBody();
           tft.fillRect(messageX+6, messageY, 14, 8, TFT_BLACK);
         }
         else {
@@ -242,6 +270,25 @@ void Outset::addCharToMessage(char key) {
   Serial.println(outgoingMessage);
   Serial.print(F("len: "));
   Serial.println(outgoingMessageLen);
+}
+
+void Outset::listenForIncomingMessages() {
+  if (currentState != TEXT_HISTORY_STATE) return;
+
+  Serial.println(F("listening"));
+  if (radio.available()) {
+    Serial.println(F("Message available!"));
+    if (radio.recv(incomingMessage, &incomingMessageLen)) {
+      Serial.print(F("got message: "));
+      Serial.println(incomingMessage);
+      // TODO: use reliableDatagram for addressed sources
+      pushMessage(incomingMessage, "00:00:00", 6);
+      textHistoryNeedsUpdate = true;
+    }
+    else { // Received Failed
+      Serial.println(F("failed to receive incoming message"));
+    }
+  }
 }
 
 void Outset::switchToState(uint8_t newState, uint8_t event) {
@@ -347,12 +394,22 @@ void Outset::textHistoryState(uint8_t event) {
     tft.setCursor(35, 60);
     tft.print("PRESS GREEN TO TEXT");
   }
+  else {
+    drawTextHistory();
+  }
+
   while (nextState == TEXT_HISTORY_STATE) {
+    listenForIncomingMessages();
     keypadEvent();
+    if (textHistoryNeedsUpdate) {
+      drawTextHistory();
+      textHistoryNeedsUpdate = false;
+    }
   }
 }
 
 void Outset::textMessageState(uint8_t event) {
+  clearBody();
   drawHeader(currentState);
   tft.setTextColor(TFT_WHITE, TFT_BLACK);
   // Reset all the message vars
@@ -372,6 +429,19 @@ void Outset::textMessageState(uint8_t event) {
 void Outset::textSendState(uint8_t event) {
   tft.setTextColor(TFT_WHITE);
   drawHeader(currentState);
+  // Send the message in outgoingMessage
+  Serial.print(F("Sending message out: "));
+  Serial.println(outgoingMessage);
+  Serial.print(F("msg len + null terminator: "));
+  Serial.println(outgoingMessageLen+1);
+  radio.send(outgoingMessage, outgoingMessageLen+1);
+  radio.waitPacketSent();
+  pushMessage(outgoingMessage, "00:00:00", deviceID);
+  textHistoryNeedsUpdate = true;
+  tft.setCursor(2, 17);
+  tft.print("MESSAGE SENT!");
+  delay(1000);
+  switchToState(TEXT_HISTORY_STATE, CONFIRM);
 }
 
 void Outset::pushMessage(const char* message, const char* timestamp, uint8_t createdBy) {
@@ -444,7 +514,7 @@ void Outset::drawBubble(Bubble bubble) {
 }
 
 void Outset::drawTextHistory() {
-  clearTextHistoryBody();
+  clearBody();
   // Draw each bubble in history
   if (drawFromTop) {
     for (uint8_t i = 0; i < 7; i++) {
@@ -548,8 +618,8 @@ void Outset::drawHeader(uint8_t state) {
   }
 }
 
-void Outset::clearTextHistoryBody() {
-  Serial.println(F("clearTextHistoryBody"));
+void Outset::clearBody() {
+  Serial.println(F("clearBody"));
   tft.fillRect(0, 15, 160, 113, TFT_BLACK);
 }
 
