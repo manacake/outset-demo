@@ -19,15 +19,8 @@
 #define TIMEOUT              4
 #define INIT_BOOT            5
 
-// Navigation links per state
-// #define INVALID_CURSOR 255
-// #define MAIN_NAV_ROUTE_CONTACTS 0
-// #define MAIN_NAV_ROUTE_PAIR 1
-// #define MAIN_NAV_ROUTE_SETTINGS 2
-
 // Other misc dev defines
+// #define DEVICE_ID ?
 #define RF95_FREQ 915.0
-#define DEFAULT_CLIENT_ADDRESS 7
-#define DEFAULT_SERVER_ADDRESS 8
 
 #endif

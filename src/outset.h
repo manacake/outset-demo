@@ -2,12 +2,14 @@
 #ifndef Outset_h
 #define Outset_h
 
-#include <RH_RF95.h>
-#include <TFT_ST7735.h>
-#include <SPI.h>
+#include <Adafruit_GFX.h>    // Core graphics library
+#include <Adafruit_ST7735.h> // Hardware-specific library
 #include <Keypad.h>
+#include <RH_RF95.h>
+#include <SPI.h>
 #include "bubble.h"
 #include "states.h"
+#include "pins.h"
 #include "colors.h"
 
 class Outset {
@@ -20,7 +22,7 @@ class Outset {
 
   private:
     RH_RF95 radio;
-    TFT_ST7735 tft;
+    Adafruit_ST7735 tft;
     Keypad keypad;
 
     // Array of function pointers modeling outset's state (view)
@@ -119,6 +121,13 @@ class Outset {
     // Keyboard event handler
     void keypadEvent(KeypadEvent key);
     void blinkTextCursor(uint8_t x, uint8_t y);
+
+    // SPI handlers
+    void enableRadio();
+    void disableRadio();
+    void enableScreen();
+    void disableScreen();
+    void disableAllSPIDevices();
 
     // Gets called when state doesn't exist or event is invalid.
     void panic();

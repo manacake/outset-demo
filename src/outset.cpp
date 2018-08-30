@@ -4,7 +4,7 @@
 Outset::Outset()
 :
 radio(RFM_CS, RFM_INT),
-tft(),
+tft(TFT_CS, TFT_DC, TFT_RESET),
 keypadKeys{ // '`' denotes an unmapped character
   {'`', '`', '{', '[', '`', '`', ']', '}', '`', '`'},
   {'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'},
@@ -51,6 +51,9 @@ stateInfo{
 
 // OS
 void Outset::init() {
+  pinMode(RFM_CS, OUTPUT);
+  pinMode(TFT_CS, OUTPUT);
+
   RH_RF95::ModemConfig modemConfig = {
     0x78, // Reg 0x1D: BW=125kHz, Coding=4/8, Header=explicit
     0xc4, // Reg 0x1E: Spread=4096chips/symbol, CRC=enable
@@ -77,15 +80,14 @@ void Outset::init() {
 
   // Enable level shifter and screen
   pinMode(LVL_SHIFT_EN, OUTPUT);
-  digitalWrite(LVL_SHIFT_EN, LOW);
+  digitalWrite(LVL_SHIFT_EN, LOW); // off
   pinMode(TFT_PWR_EN, OUTPUT);
-  digitalWrite(TFT_PWR_EN, HIGH);
-  delay(250);
-  digitalWrite(LVL_SHIFT_EN, HIGH);
-  digitalWrite(TFT_PWR_EN, LOW);
+  digitalWrite(TFT_PWR_EN, HIGH); // off
+  digitalWrite(LVL_SHIFT_EN, HIGH); // on
+  digitalWrite(TFT_PWR_EN, LOW); // on
   pinMode(TP_BUTTON, INPUT);
 
-  tft.init();
+  tft.initR(INITR_GREENTAB);
   tft.setRotation(3);
   tft.fillScreen(TFT_BLACK);
   keypad.setDebounceTime(10);
@@ -111,7 +113,6 @@ void Outset::runFSM() {
     Serial.println(nextEvent);
 
     // Call the event handler to enter the state.
-    delay(500);
     tft.fillScreen(TFT_BLACK);
     (this->*stateInfo[currentState].handler)(nextEvent);
   }
@@ -274,15 +275,13 @@ void Outset::addCharToMessage(char key) {
 
 void Outset::listenForIncomingMessages() {
   if (currentState != TEXT_HISTORY_STATE) return;
-
-  Serial.println(F("listening"));
   if (radio.available()) {
     Serial.println(F("Message available!"));
     if (radio.recv(incomingMessage, &incomingMessageLen)) {
       Serial.print(F("got message: "));
       Serial.println(incomingMessage);
       // TODO: use reliableDatagram for addressed sources
-      pushMessage(incomingMessage, "00:00:00", 6);
+      pushMessage(incomingMessage, "00:00:00", 1);
       textHistoryNeedsUpdate = true;
     }
     else { // Received Failed
@@ -298,8 +297,6 @@ void Outset::switchToState(uint8_t newState, uint8_t event) {
     panic();
   }
 
-  // Tina Q: if this is a const, wouldn't this keep stacking every time
-  // switchToState is called?
   const __FlashStringHelper *curStateName = stateInfo[currentState].name;
   const __FlashStringHelper *newStateName = stateInfo[newState].name;
 
@@ -347,6 +344,7 @@ void Outset::splashState(uint8_t event) {
     }
     lastTrackpadState = trackpadReading;
   }
+  Serial.println(F("Exiting splashState"));
 }
 
 void Outset::blinkStartCursor(uint8_t x, uint8_t y) {
@@ -399,13 +397,14 @@ void Outset::textHistoryState(uint8_t event) {
   }
 
   while (nextState == TEXT_HISTORY_STATE) {
-    listenForIncomingMessages();
     keypadEvent();
+    listenForIncomingMessages();
     if (textHistoryNeedsUpdate) {
       drawTextHistory();
       textHistoryNeedsUpdate = false;
     }
   }
+  Serial.println(F("Exiting textHistoryState"));
 }
 
 void Outset::textMessageState(uint8_t event) {
@@ -424,6 +423,7 @@ void Outset::textMessageState(uint8_t event) {
   while (nextState == TEXT_MESSAGE_STATE) {
     keypadEvent();
   }
+  Serial.println(F("Exiting textMessageState"));
 }
 
 void Outset::textSendState(uint8_t event) {
