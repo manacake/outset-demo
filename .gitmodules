@@ -7,3 +7,6 @@
 [submodule "lib/Adafruit-ST7735-Library"]
 	path = lib/Adafruit-ST7735-Library
 	url = https://github.com/adafruit/Adafruit-ST7735-Library.git
+[submodule "lib/Keypad"]
+	path = lib/Keypad
+	url = https://github.com/Chris--A/Keypad.git
