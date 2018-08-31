@@ -1,4 +1,7 @@
-// bubble.cpp
+/*
+  bubble.cpp - Outset texting demo
+  author: @manacake
+*/
 #include <math.h>
 #include <string.h>
 #include <SPI.h>

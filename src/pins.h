@@ -1,4 +1,7 @@
-// pins.h
+/*
+  pins.h - Outset texting demo
+  author: @manacake
+*/
 #ifndef Pins_h
 #define Pins_h
 

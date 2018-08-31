@@ -1,4 +1,7 @@
-// bubble.h
+/*
+  bubble.h - Outset texting demo
+  author: @manacake
+*/
 #ifndef Bubble_h
 #define Bubble_h
 

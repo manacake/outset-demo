@@ -1,4 +1,7 @@
-// colors.h
+/*
+  colors.h - Outset texting demo
+  author: @manacake
+*/
 #ifndef Colors_h
 #define Colors_h
 

@@ -1,7 +1,11 @@
-// outset.h
+/*
+  outset.h - Outset texting demo
+  author: @manacake
+*/
 #ifndef Outset_h
 #define Outset_h
 
+#include <Arduino.h>
 #include <Adafruit_GFX.h>    // Core graphics library
 #include <Adafruit_ST7735.h> // Hardware-specific library
 #include <Keypad.h>

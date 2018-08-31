@@ -1,4 +1,7 @@
-// states.h
+/*
+  states.h - Outset texting demo
+  author: @manacake
+*/
 #ifndef States_h
 #define States_h
 
@@ -20,6 +23,7 @@
 #define INIT_BOOT            5
 
 // Other misc dev defines
+// Note: This can be set in platformio.ini as a build flag if you use Platformio
 // #define DEVICE_ID ?
 #define RF95_FREQ 915.0
 

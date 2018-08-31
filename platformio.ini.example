@@ -1,0 +1,25 @@
+; PlatformIO Project Configuration File
+;
+;   Build options: build flags, source filter
+;   Upload options: custom upload port, speed and extra flags
+;   Library options: dependencies, extra library storages
+;   Advanced options: extra scripting
+;
+; Please visit documentation for the other options and examples
+; http://docs.platformio.org/page/projectconf.html
+
+[env:matte]
+platform = atmelavr
+board = megaatmega2560
+framework = arduino
+upload_port = <PORT_HERE>
+build_flags =
+  -D DEVICE_ID=7
+
+[env:grey]
+platform = atmelavr
+board = megaatmega2560
+framework = arduino
+upload_port = <PORT_HERE>
+build_flags =
+  -D DEVICE_ID=8

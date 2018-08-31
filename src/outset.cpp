@@ -1,4 +1,7 @@
-// outset.cpp
+/*
+  outset.cpp - Outset texting demo
+  author: @manacake
+*/
 #include "outset.h"
 
 Outset::Outset()
