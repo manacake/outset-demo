@@ -1,6 +1,7 @@
 /*
-  colors.h - Outset texting demo
-  author: @manacake
+  bubble.cpp - Outset texting demo
+  author: Tina Zhao
+  github: @manacake
 */
 #ifndef Colors_h
 #define Colors_h

@@ -1,6 +1,7 @@
 /*
-  outset.h - Outset texting demo
-  author: @manacake
+  bubble.cpp - Outset texting demo
+  author: Tina Zhao
+  github: @manacake
 */
 #ifndef Outset_h
 #define Outset_h

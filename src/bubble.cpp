@@ -1,6 +1,7 @@
 /*
   bubble.cpp - Outset texting demo
-  author: @manacake
+  author: Tina Zhao
+  github: @manacake
 */
 #include <math.h>
 #include <string.h>

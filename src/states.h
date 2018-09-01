@@ -1,6 +1,7 @@
 /*
-  states.h - Outset texting demo
-  author: @manacake
+  bubble.cpp - Outset texting demo
+  author: Tina Zhao
+  github: @manacake
 */
 #ifndef States_h
 #define States_h
