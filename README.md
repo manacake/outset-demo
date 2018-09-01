@@ -1,4 +1,4 @@
-### Outset Range Demo
+### Outset Texting Demo
 
 This demo shows off a minimal UI with a functioning text feature:
 
