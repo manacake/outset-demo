@@ -12,6 +12,8 @@
 #include <Keypad.h>
 #include <RH_RF95.h>
 #include <SPI.h>
+#include <Wire.h>
+#include "RTClib.h"
 #include "bubble.h"
 #include "states.h"
 #include "pins.h"
@@ -29,6 +31,7 @@ class Outset {
     RH_RF95 radio;
     Adafruit_ST7735 tft;
     Keypad keypad;
+    RTC_DS1307 rtc;
 
     // Array of function pointers modeling outset's state (view)
     // index represents the state
@@ -117,6 +120,7 @@ class Outset {
     void drawTextHistory();
     void drawWispyTail(uint8_t x, uint8_t y, uint8_t side, uint16_t color);
     void drawBubble(Bubble bubble);
+    void formatTime(char* buff, uint8_t hour, uint8_t min, uint8_t sec);
 
     // Message Handlers
     void pushMessage(const char* message, const char* timestamp, uint8_t createdBy);

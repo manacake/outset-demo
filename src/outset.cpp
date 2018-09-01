@@ -78,7 +78,6 @@ void Outset::init() {
   else {
     radio.setTxPower(20, false);
     radio.setModemRegisters(&modemConfig);
-    // driver.setTimeout(500); // only available in reliable datagram
     Serial.println(F("radio init complete"));
   }
 
@@ -95,6 +94,14 @@ void Outset::init() {
   tft.setRotation(3);
   tft.fillScreen(TFT_BLACK);
   keypad.setDebounceTime(10);
+
+  // Init clock
+  rtc.begin();
+  // rtc not running!
+  if (!rtc.isrunning()) {
+    // Sets the rtc to the date & time this file was compiled
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  }
 
   // Set up the initial state transition.
   switchToState(initialState, INIT_BOOT);
@@ -284,8 +291,12 @@ void Outset::listenForIncomingMessages() {
     if (radio.recv(incomingMessage, &incomingMessageLen)) {
       Serial.print(F("got message: "));
       Serial.println(incomingMessage);
+
+      DateTime now = rtc.now();
+      char timestamp[8];
+      formatTime(timestamp, now.hour(), now.minute(), now.second());
       // TODO: use reliableDatagram for addressed sources
-      pushMessage(incomingMessage, "00:00:00", 1);
+      pushMessage(incomingMessage, timestamp, 1);
       textHistoryNeedsUpdate = true;
     }
     else { // Received Failed
@@ -408,7 +419,6 @@ void Outset::textHistoryState(uint8_t event) {
       textHistoryNeedsUpdate = false;
     }
   }
-  Serial.println(F("Exiting textHistoryState"));
 }
 
 void Outset::textMessageState(uint8_t event) {
@@ -427,10 +437,10 @@ void Outset::textMessageState(uint8_t event) {
   while (nextState == TEXT_MESSAGE_STATE) {
     keypadEvent();
   }
-  Serial.println(F("Exiting textMessageState"));
 }
 
 void Outset::textSendState(uint8_t event) {
+  char timestamp[8];
   tft.setTextColor(TFT_WHITE);
   drawHeader(currentState);
   // Send the message in outgoingMessage
@@ -440,7 +450,10 @@ void Outset::textSendState(uint8_t event) {
   Serial.println(outgoingMessageLen+1);
   radio.send(outgoingMessage, outgoingMessageLen+1);
   radio.waitPacketSent();
-  pushMessage(outgoingMessage, "00:00:00", deviceID);
+
+  DateTime now = rtc.now();
+  formatTime(timestamp, now.hour(), now.minute(), now.second());
+  pushMessage(outgoingMessage, timestamp, deviceID);
   textHistoryNeedsUpdate = true;
   tft.setCursor(2, 17);
   tft.print("MESSAGE SENT!");
@@ -752,4 +765,26 @@ void Outset::drawTextContainer(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8
     tft.fillRect(x+2, y+5, 3, 2, PINK_DARK);
     tft.fillRect(x+(w-5), y+5, 3, 2, PINK_DARK);
   }
+}
+
+void Outset::formatTime(char* buff, uint8_t hour, uint8_t min, uint8_t sec) {
+  char temp[3];
+   buff[0] = '\0';
+  itoa(hour, temp, 10);
+  if (hour < 10) {
+    strcpy(buff, "0");
+  }
+  strcat(buff, temp);
+  strcat(buff, ":");
+   if (min < 10) {
+    strcat(buff, "0");
+  }
+  itoa(min, temp, 10);
+  strcat(buff, temp);
+  strcat(buff, ":");
+   if (sec < 10) {
+    strcat(buff, "0");
+  }
+  itoa(sec, temp, 10);
+  strcat(buff, temp);
 }
