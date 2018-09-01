@@ -8,24 +8,25 @@
 
 // Use 5:6:5 color depth (16 bit)
 // light to dark (as number decreases)
+// But this uses BGR (reversed)!
 #define BLUE_MODE     1
 #define GREEN_MODE    2
 #define PINK_MODE     3
 
-#define BLUE_LIGHTEST 0xA7FE
-#define BLUE_LIGHT    0x669C
-#define BLUE_MID      0x4498
-#define BLUE_DARK     0x3290
+#define BLUE_LIGHTEST 0xF7F4
+#define BLUE_LIGHT    0xE68C
+#define BLUE_MID      0xC488
+#define BLUE_DARK     0x4143
 
 #define GREEN_LIGHTEST 0xCF90
 #define GREEN_LIGHT    0x9F40
 #define GREEN_MID      0x5500
 #define GREEN_DARK     0x3B40
 
-#define PINK_LIGHTEST  0xE59F
-#define PINK_LIGHT     0xF31F
-#define PINK_MID       0xDA18
-#define PINK_DARK      0x990F
+#define PINK_LIGHTEST  0xFD9C
+#define PINK_LIGHT     0xFB1E
+#define PINK_MID       0xC21B
+#define PINK_DARK      0x7913
 
 #define TFT_BLACK ST7735_BLACK
 #define TFT_WHITE ST7735_WHITE

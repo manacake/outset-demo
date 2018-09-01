@@ -404,7 +404,7 @@ void Outset::blinkTextCursor(uint8_t x, uint8_t y) {
 void Outset::textHistoryState(uint8_t event) {
   drawHeader(currentState);
   if (textHistory[0].isEmpty()) {
-    tft.setCursor(35, 60);
+    tft.setCursor(24, 60);
     tft.print("PRESS GREEN TO TEXT");
   }
   else {
