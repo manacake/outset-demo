@@ -519,8 +519,8 @@ void Outset::drawBubble(Bubble bubble) {
   // Is this my own text or somebody else's?
   if (bubble.createdBy() == deviceID) { // Draw my text bubble with wispy tail on right side
     historyX = 160-(bubble.width()+6); // wispy tail is 5px + 1px gutter
-    tft.fillRoundRect(historyX, historyY, bubble.width(), bubble.height(), 4, BLUE_DARK);
-    drawWispyTail(154, historyY+(bubble.height()-5), TAIL_RIGHT_SIDE, BLUE_DARK);
+    tft.fillRoundRect(historyX, historyY, bubble.width(), bubble.height(), 4, GREY);
+    drawWispyTail(154, historyY, TAIL_RIGHT_SIDE, GREY);
   }
   else { // Draw other text bubble with wispy tail on the left side
     historyX = 6;
@@ -603,15 +603,15 @@ void Outset::drawWispyTail(uint8_t x, uint8_t y, uint8_t side, uint16_t color) {
       break;
     case TAIL_RIGHT_SIDE:
       // These were added to cover up the border radius of the text bubble
-      tft.drawFastVLine(x-3, y+3, 2, color);
-      tft.drawFastVLine(x-2, y+2, 3, color);
-      tft.drawFastVLine(x-1, y+1, 4, color);
+      tft.drawFastVLine(x-3, y, 2, color);
+      tft.drawFastVLine(x-2, y, 3, color);
+      tft.drawFastVLine(x-1, y, 4, color);
       // Right triangle
       tft.drawFastVLine(x, y, 5, color);
-      tft.drawFastVLine(x+1, y+1, 4, color);
-      tft.drawFastVLine(x+2, y+2, 3, color);
-      tft.drawFastVLine(x+3, y+3, 2, color);
-      tft.drawPixel(x+4, y+4, color);
+      tft.drawFastVLine(x+1, y, 4, color);
+      tft.drawFastVLine(x+2, y, 3, color);
+      tft.drawFastVLine(x+3, y, 2, color);
+      tft.drawPixel(x+4, y, color);
       break;
   }
 }

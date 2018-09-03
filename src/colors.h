@@ -28,6 +28,8 @@
 #define PINK_MID       0xC21B
 #define PINK_DARK      0x7913
 
+#define GREY           0x4A69
+
 #define TFT_BLACK ST7735_BLACK
 #define TFT_WHITE ST7735_WHITE
 #endif
