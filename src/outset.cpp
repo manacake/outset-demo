@@ -556,10 +556,10 @@ void Outset::drawTextHistory() {
       Bubble bubble = textHistory[i];
       if (i == 6) {
         // Header is 16px high
-        historyY = 108;
+        historyY = 128-bubble.height()-1; //-1 for the margin
         sumOfBubbleHeights = 0; // Reset when drawing from beginning
       } else {
-        historyY = 108 - sumOfBubbleHeights;
+        historyY = (128-bubble.height()-1) - sumOfBubbleHeights;
       }
       if (!bubble.isEmpty() && historyY >= 0) {
         Serial.print(F("call drawBubble: "));
