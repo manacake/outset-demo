@@ -129,6 +129,16 @@ void Outset::runFSM() {
   }
 }
 
+void Outset::turnOnLevelShifter() {
+  digitalWrite(LVL_SHIFT_EN, HIGH); // on
+  delay(10);
+}
+
+void Outset::turnOffLevelShifter() {
+  digitalWrite(LVL_SHIFT_EN, LOW); // off
+  delay(10);
+}
+
 void Outset::panic() {
   Serial.println(F("PANIC"));
   for (;;);
@@ -288,6 +298,7 @@ void Outset::listenForIncomingMessages() {
   if (currentState != TEXT_HISTORY_STATE) return;
   if (radio.available()) {
     Serial.println(F("Message available!"));
+    turnOffLevelShifter();
     if (radio.recv(incomingMessage, &incomingMessageLen)) {
       Serial.print(F("got message: "));
       Serial.println(incomingMessage);
@@ -302,6 +313,7 @@ void Outset::listenForIncomingMessages() {
     else { // Received Failed
       Serial.println(F("failed to receive incoming message"));
     }
+    turnOnLevelShifter();
   }
 }
 

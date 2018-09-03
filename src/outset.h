@@ -126,6 +126,8 @@ class Outset {
     void pushMessage(const char* message, const char* timestamp, uint8_t createdBy);
     void listenForIncomingMessages();
     void testMessages();
+    void turnOnLevelShifter();
+    void turnOffLevelShifter();
 
     // Keyboard event handler
     void keypadEvent(KeypadEvent key);
