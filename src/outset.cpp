@@ -149,8 +149,6 @@ void Outset::keypadEvent() {
     case TEXT_HISTORY_STATE: {
       char key = keypad.getKey();
       if (key && key == '{') {
-        Serial.print(F("pressed: "));
-        Serial.println(key);
         switchToState(TEXT_MESSAGE_STATE, CONFIRM);
       }
       break;
@@ -288,10 +286,6 @@ void Outset::addCharToMessage(char key) {
     }
   }
   outgoingMessageUpdate = true;
-  Serial.print(F("message now: "));
-  Serial.println(outgoingMessage);
-  Serial.print(F("len: "));
-  Serial.println(outgoingMessageLen);
 }
 
 void Outset::listenForIncomingMessages() {
@@ -371,7 +365,6 @@ void Outset::splashState(uint8_t event) {
     }
     lastTrackpadState = trackpadReading;
   }
-  Serial.println(F("Exiting splashState"));
 }
 
 void Outset::blinkStartCursor(uint8_t x, uint8_t y) {
@@ -515,7 +508,6 @@ void Outset::testMessages() {
 
 // Drawing helpers ===========================================================
 void Outset::drawBubble(Bubble bubble) {
-  Serial.println(F("drawBubble enter"));
   // Is this my own text or somebody else's?
   if (bubble.createdBy() == deviceID) { // Draw my text bubble with wispy tail on right side
     historyX = 160-(bubble.width()+6); // wispy tail is 5px + 1px gutter
@@ -535,9 +527,6 @@ void Outset::drawBubble(Bubble bubble) {
   sumOfBubbleHeights += (bubble.height() + 2); // 1px for margin
   // If we've received more messages that can fit, start drawing bottom up
   if (drawFromTop && sumOfBubbleHeights > 99) {
-    Serial.print(F("Reached maximum bubbles from top down! Sum: "));
-    Serial.println(sumOfBubbleHeights);
-    Serial.println(F("Now drawing from bottom up!"));
     drawFromTop = false;
   }
 }
@@ -555,10 +544,6 @@ void Outset::drawTextHistory() {
         historyY = 16 + sumOfBubbleHeights;
       }
       if (!bubble.isEmpty()) {
-        Serial.print(F("call drawBubble: "));
-        Serial.println(i);
-        Serial.print(F("Y axis: "));
-        Serial.println(historyY);
         drawBubble(bubble);
       }
     }
@@ -574,10 +559,6 @@ void Outset::drawTextHistory() {
         historyY = (128-bubble.height()-1) - sumOfBubbleHeights;
       }
       if (!bubble.isEmpty() && historyY >= 0) {
-        Serial.print(F("call drawBubble: "));
-        Serial.println(i);
-        Serial.print(F("Y axis: "));
-        Serial.println(historyY);
         drawBubble(bubble);
       }
     }
