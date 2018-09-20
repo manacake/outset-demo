@@ -1,5 +1,7 @@
 ### Outset Texting Demo
 
+<img src="https://s3-us-west-2.amazonaws.com/docs.greycat.co/outsetDemo.gif">
+
 This demo shows off a minimal UI with a functioning text feature:
 
 The board boots up to the starting view: `SPLASH_STATE`. You can press the trackpad button to continue.
