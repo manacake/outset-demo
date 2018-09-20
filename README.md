@@ -1,8 +1,6 @@
 ### Outset Texting Demo
 
-<img src="https://s3-us-west-2.amazonaws.com/docs.greycat.co/outsetDemo.gif">
-
-This demo shows off a minimal UI with a functioning text feature:
+This demo shows off a minimal UI with a functioning text feature using a [LoRa text dev kit](https://greycat.co):
 
 The board boots up to the starting view: `SPLASH_STATE`. You can press the trackpad button to continue.
 
