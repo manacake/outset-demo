@@ -8,7 +8,7 @@
 
 // Use 5:6:5 color depth (16 bit)
 // light to dark (as number decreases)
-// But this uses BGR (reversed)!
+// But Adafruit GFX lib uses BGR (reversed)!
 #define BLUE_MODE     1
 #define GREEN_MODE    2
 #define PINK_MODE     3

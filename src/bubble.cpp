@@ -16,7 +16,7 @@ Bubble::Bubble(const char* message, const char* timestamp, uint8_t createdBy) {
   strncpy(_message, message, messageLen);
   _message[messageLen] = '\0';
 
-  // Timestamp length is static
+  // Timestamp length is static in the form of "hh:mm:ss"
   strncpy(_timestamp, timestamp, 8);
   _timestamp[8] = '\0';
 
