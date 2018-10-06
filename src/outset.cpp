@@ -148,8 +148,12 @@ void Outset::keypadEvent() {
   switch (currentState) {
     case TEXT_HISTORY_STATE: {
       char key = keypad.getKey();
-      if (key && key == '{') {
-        switchToState(TEXT_MESSAGE_STATE, CONFIRM);
+      if (key) {
+        lastWakeupEventMills = millis();
+        digitalWrite(TFT_PWR_EN, LOW); // on
+        if (key == '{') {
+          switchToState(TEXT_MESSAGE_STATE, CONFIRM);
+        }
       }
       break;
     }
@@ -170,6 +174,8 @@ void Outset::keypadEvent() {
 
       // Scan for keys and draw them on the screen
       if (keypad.getKeys()) {
+        lastWakeupEventMills = millis();
+        digitalWrite(TFT_PWR_EN, LOW); // on
         for (uint8_t i = 0; i < LIST_MAX; i++) {
           if (keypad.key[i].stateChanged) {
             switch (keypad.key[i].kstate) {
@@ -407,6 +413,8 @@ void Outset::blinkTextCursor(uint8_t x, uint8_t y) {
 }
 
 void Outset::textHistoryState(uint8_t event) {
+  lastWakeupEventMills = millis();
+  digitalWrite(TFT_PWR_EN, LOW); // on
   drawHeader(currentState);
   if (textHistory[0].isEmpty()) {
     tft.setCursor(24, 60);
@@ -415,11 +423,15 @@ void Outset::textHistoryState(uint8_t event) {
   else {
     drawTextHistory();
   }
-
   while (nextState == TEXT_HISTORY_STATE) {
+    if (millis() > (lastWakeupEventMills + SCREEN_SAVER_TIMEOUT)) {
+      digitalWrite(TFT_PWR_EN, HIGH); // off
+    }
     keypadEvent();
     listenForIncomingMessages();
     if (textHistoryNeedsUpdate) {
+      lastWakeupEventMills = millis();
+      digitalWrite(TFT_PWR_EN, LOW); // on
       drawTextHistory();
       textHistoryNeedsUpdate = false;
     }
