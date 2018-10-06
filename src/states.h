@@ -28,4 +28,6 @@
 // #define DEVICE_ID ?
 #define RF95_FREQ 915.0
 
+#define SCREEN_SAVER_TIMEOUT 5000
+
 #endif

@@ -75,6 +75,9 @@ class Outset {
     // The state of the sym key on the keypad. Returns true if pressed else false
     bool symPressed;
 
+    // Last time a keypress or other event (i.e. new incoming data) happens in order to wake up screen
+   unsigned long lastWakeupEventMills;
+
     // Used for keeping the debounce state of the trackpad
     uint8_t trackpadState;
     uint8_t lastTrackpadState;
